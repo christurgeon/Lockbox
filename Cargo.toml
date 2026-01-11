@@ -1,0 +1,47 @@
+[package]
+name = "lockbox"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.92"
+description = "A secure file encryption CLI tool using Argon2id and ChaCha20-Poly1305"
+license = "MIT"
+readme = "README.md"
+keywords = ["encryption", "security", "cli", "cryptography", "file-encryption"]
+categories = ["command-line-utilities", "cryptography"]
+repository = "https://github.com/christurgeon/lockbox"
+homepage = "https://github.com/christurgeon/lockbox"
+documentation = "https://github.com/christurgeon/lockbox#readme"
+authors = ["Chris Turgeon <turgeonchris3@outlook.com>"]
+exclude = [".github/", "tests/", "*.lb"]
+
+[dependencies]
+# CLI argument parsing
+clap = { version = "4.4", features = ["derive"] }
+
+# Cryptography
+argon2 = "0.5"
+chacha20poly1305 = "0.10"
+rand = "0.8"
+
+# Secure password input
+rpassword = "7.3"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Secure memory handling - zeroes sensitive data when dropped
+zeroize = { version = "1.7", features = ["derive"] }
+
+# For colored terminal output
+colored = "2.1"
+
+[dev-dependencies]
+tempfile = "3.10"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

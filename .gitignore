@@ -1,0 +1,19 @@
+# Build artifacts
+/target/
+/debug/
+*.pdb
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+*.lb
+test_*.txt
