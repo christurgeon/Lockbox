@@ -18,7 +18,7 @@ pub struct Cli {
 pub enum Commands {
     /// Encrypt one or more files
     ///
-    /// Fiels will be encrypted and saved with the .lb extension.
+    /// Fields will be encrypted and saved with the .lb extension.
     /// Original files are preserved (not deleted).
     #[command(visible_alias = "enc", visible_alias = "e")]
     Encrypt {
@@ -40,7 +40,7 @@ pub enum Commands {
         #[arg(required = true, num_args = 1..)]
         files: Vec<PathBuf>,
 
-        /// Output direcotry for decrypted files (defaults to current directory)
+        /// Output directory for decrypted files (defaults to current directory)
         #[arg(short, long)]
         output: Option<PathBuf>,
 

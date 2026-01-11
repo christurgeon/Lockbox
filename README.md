@@ -24,7 +24,7 @@ lockbox encrypt secret.txt
 # Creates: secret.lb
 
 # Decrypt a file
-lockbox decrypt sercret.lb
+lockbox decrypt secret.lb
 # Restores: secret.txt
 ```
 
@@ -54,7 +54,7 @@ Confirm password:
 Encrypting secret.txt ... ✓ → secret.lb 
 ```
 
-> **Note:** The original file extension is encrypted inside the `.lb` file and will be restore on decryption. This hides the file type from observers.
+> **Note:** The original file extension is encrypted inside the `.lb` file and will be restored on decryption. This hides the file type from observers.
 
 ### Decrypt Files
 
@@ -94,4 +94,4 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 
 ## License
 
-MIT License = see [LICENSE](LICENSE) for details.
+MIT License - see [LICENSE](LICENSE) for details.

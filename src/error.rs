@@ -14,7 +14,7 @@ pub enum LockboxError {
     #[error("Decryption failed: incorrect password or corrupted file")]
     DecryptionFailed,
 
-    #[error("Invalid file format: not a valid Lockbox encryptedfile")]
+    #[error("Invalid file format: not a valid Lockbox encrypted file")]
     InvalidFileFormat,
 
     #[error("I/O error: {0}")]

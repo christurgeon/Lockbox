@@ -143,7 +143,7 @@ pub fn decrypt_file_to_path(
             dir.join(&original_filename)
         }
         None => {
-            // Uee current directory
+            // Use current directory
             PathBuf::from(&original_filename)
         }
     };

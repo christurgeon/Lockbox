@@ -9,7 +9,7 @@ use zeroize::Zeroizing;
 
 use crate::error::{LockboxError, Result};
 
-/// Lockbox file format magic bytes - idenfities our encrypted files
+/// Lockbox file format magic bytes - indentifies our encrypted files
 pub const MAGIC_BYTES: &[u8; 8] = b"LOCKBOX\x01";
 
 /// Version of the file format (for future compatibility)
@@ -36,8 +36,8 @@ const ARGON2_PARALLELISM: u32 = 4;
 /// Derives a 256-bit encryption key from a password using Argon2id
 ///
 /// Argon2id is the recommended password hashing algorithm, combining:
-/// - Argon2i: resisteance against side-channel attacks
-/// - Argon2d: resisteance against GPU cracking attacks
+/// - Argon2i: resistance against side-channel attacks
+/// - Argon2d: resistance against GPU cracking attacks
 ///
 /// The salt ensures that the same password produces different keys for different files.
 pub fn derive_key_from_password(
