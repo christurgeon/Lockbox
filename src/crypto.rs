@@ -1,5 +1,5 @@
 use argon2::{Algorithm, Argon2, Params, Version};
-use chacha20poly1305:: {
+use chacha20poly1305::{
     aead::{Aead, KeyInit},
     ChaCha20Poly1305, Nonce,
 };
@@ -40,7 +40,10 @@ const ARGON2_PARALLELISM: u32 = 4;
 /// - Argon2d: resisteance against GPU cracking attacks
 ///
 /// The salt ensures that the same password produces different keys for different files.
-pub fn derive_key_from_password(password: &[u8], salt: &[u8]) -> Result<Zeroizing<[u8; KEY_LENGTH]>> {
+pub fn derive_key_from_password(
+    password: &[u8],
+    salt: &[u8],
+) -> Result<Zeroizing<[u8; KEY_LENGTH]>> {
     let params = Params::new(
         ARGON2_MEMORY_KIB,
         ARGON2_ITERATIONS,
@@ -52,7 +55,9 @@ pub fn derive_key_from_password(password: &[u8], salt: &[u8]) -> Result<Zeroizin
     let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
 
     let mut key = Zeroizing::new([0u8; KEY_LENGTH]);
-    argon2.hash_password_into(password, salt, key.as_mut()).map_err(|e| LockboxError::EncryptionFailed(format!("Key derivation failed: {}", e)))?;
+    argon2
+        .hash_password_into(password, salt, key.as_mut())
+        .map_err(|e| LockboxError::EncryptionFailed(format!("Key derivation failed: {}", e)))?;
 
     Ok(key)
 }
@@ -72,39 +77,52 @@ pub fn generate_nonce() -> [u8; NONCE_LENGTH] {
 }
 
 /// Encrypts plaintext data using ChaCha20-Poly1305
-/// 
+///
 /// ChaCha20-Poly1305 is an authenticated encryption algorithm that provides:
 /// - Confidentiality: data is encrypted with ChaCha20 stream cipher
 /// - Integrity: Poly1305 MAC ensures that data hasn't been tampered with
 /// - Authentication: verifies the cipher text was created with the correct key
-/// 
+///
 /// Returns the ciphertext with the 16-byte authentication tag appended.
-pub fn encrypt(key: &[u8; KEY_LENGTH], nonce: &[u8; NONCE_LENGTH], plaintext: &[u8]) -> Result<Vec<u8>> {
-    let cipher = ChaCha20Poly1305::new_from_slice(key).map_err(|e| LockboxError::EncryptionFailed(format!("Cipher init failed: {}", e)))?;
+pub fn encrypt(
+    key: &[u8; KEY_LENGTH],
+    nonce: &[u8; NONCE_LENGTH],
+    plaintext: &[u8],
+) -> Result<Vec<u8>> {
+    let cipher = ChaCha20Poly1305::new_from_slice(key)
+        .map_err(|e| LockboxError::EncryptionFailed(format!("Cipher init failed: {}", e)))?;
 
     let nonce = Nonce::from_slice(nonce);
 
-    cipher.encrypt(nonce, plaintext).map_err(|e| LockboxError::EncryptionFailed(format!("Encryption failed: {}", e)))
+    cipher
+        .encrypt(nonce, plaintext)
+        .map_err(|e| LockboxError::EncryptionFailed(format!("Encryption failed: {}", e)))
 }
 
 /// Decrypts ciphertext using ChaCha20-Poly1305
-/// 
+///
 /// This function also verifies the authentication tag, ensuring:
 /// - The data hasn't been modified
 /// - The correct password was used
-/// 
+///
 /// Returns an error if authentication fails (wrong password or corrupted data).
-pub fn decrypt(key: &[u8; KEY_LENGTH], nonce: &[u8; NONCE_LENGTH], ciphertext: &[u8]) -> Result<Vec<u8>> {
-    let cipher = ChaCha20Poly1305::new_from_slice(key).map_err(|_| LockboxError::DecryptionFailed)?;
+pub fn decrypt(
+    key: &[u8; KEY_LENGTH],
+    nonce: &[u8; NONCE_LENGTH],
+    ciphertext: &[u8],
+) -> Result<Vec<u8>> {
+    let cipher =
+        ChaCha20Poly1305::new_from_slice(key).map_err(|_| LockboxError::DecryptionFailed)?;
 
     let nonce = Nonce::from_slice(nonce);
 
-    cipher.decrypt(nonce, ciphertext).map_err(|_| LockboxError::DecryptionFailed)
-
+    cipher
+        .decrypt(nonce, ciphertext)
+        .map_err(|_| LockboxError::DecryptionFailed)
 }
 
 /// Encrypted file structure:
-/// 
+///
 /// | Offset | Size | Description                          |
 /// |--------|------|--------------------------------------|
 /// | 0      | 0    | Magic bytes "LOCKBOX\x01"            |
@@ -118,7 +136,11 @@ pub fn decrypt(key: &[u8; KEY_LENGTH], nonce: &[u8; NONCE_LENGTH], ciphertext: &
 /// Total header size before encrypted data: 39 + filename_length bytes
 
 /// Creates the encrypted file format with all metadata
-pub fn create_encrypted_file(password: &[u8], original_filename: &str, plaintext: &[u8]) -> Result<Vec<u8>> {
+pub fn create_encrypted_file(
+    password: &[u8],
+    original_filename: &str,
+    plaintext: &[u8],
+) -> Result<Vec<u8>> {
     let salt = generate_salt();
     let nonce = generate_nonce();
     let key = derive_key_from_password(password, &salt)?;
@@ -150,7 +172,7 @@ pub fn create_encrypted_file(password: &[u8], original_filename: &str, plaintext
 }
 
 /// Parses an encrypted file and decrypts its contents
-/// 
+///
 /// Returns: (original_filename, decrypted_data)
 pub fn decrypt_file(password: &[u8], encrypted_data: &[u8]) -> Result<(String, Vec<u8>)> {
     // Minimum size: magic(8) + version(1) + filename_len(2) + salt(16) + nonce(12) + tag(16)
@@ -190,11 +212,16 @@ pub fn decrypt_file(password: &[u8], encrypted_data: &[u8]) -> Result<(String, V
 
     // Extract components
     let filename_bytes = &encrypted_data[filename_start..filename_end];
-    let original_filename = String::from_utf8(filename_bytes.to_vec()).map_err(|_| LockboxError::InvalidFileFormat)?;
+    let original_filename =
+        String::from_utf8(filename_bytes.to_vec()).map_err(|_| LockboxError::InvalidFileFormat)?;
 
-    let salt: [u8; SALT_LENGTH] = encrypted_data[salt_start..salt_end].try_into().map_err(|_| LockboxError::InvalidFileFormat)?;
+    let salt: [u8; SALT_LENGTH] = encrypted_data[salt_start..salt_end]
+        .try_into()
+        .map_err(|_| LockboxError::InvalidFileFormat)?;
 
-    let nonce: [u8; NONCE_LENGTH] = encrypted_data[nonce_start..nonce_end].try_into().map_err(|_| LockboxError::InvalidFileFormat)?;
+    let nonce: [u8; NONCE_LENGTH] = encrypted_data[nonce_start..nonce_end]
+        .try_into()
+        .map_err(|_| LockboxError::InvalidFileFormat)?;
 
     let ciphertext = &encrypted_data[ciphertext_start..];
 

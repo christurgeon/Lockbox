@@ -47,7 +47,7 @@ pub enum Commands {
         /// Force overwrite without prompting if output file exists
         #[arg(short, long, default_value_t = false)]
         force: bool,
-    }
+    },
 }
 
 impl Cli {

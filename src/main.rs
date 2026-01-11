@@ -17,8 +17,8 @@ fn prompt_password(prompt: &str) -> Result<Zeroizing<String>> {
     print!("{}", prompt);
     io::stdout().flush()?;
 
-    let password = rpassword::read_password().
-    map_err(|e| LockboxError::IoError(io::Error::new(io::ErrorKind::Other, e)))?;
+    let password = rpassword::read_password()
+        .map_err(|e| LockboxError::IoError(io::Error::new(io::ErrorKind::Other, e)))?;
 
     Ok(Zeroizing::new(password))
 }
@@ -75,7 +75,7 @@ fn run() -> Result<()> {
                         success_count += 1;
                     }
                     Err(LockboxError::Cancelled) => {
-                        println!("{}", "skipped".yellow());    
+                        println!("{}", "skipped".yellow());
                     }
                     Err(e) => {
                         println!("{} {}", "✗".red(), e);
@@ -99,8 +99,12 @@ fn run() -> Result<()> {
                     error_count
                 );
             }
-        } 
-        Commands::Decrypt { files, output, force } => {
+        }
+        Commands::Decrypt {
+            files,
+            output,
+            force,
+        } => {
             println!("{}", "🔓 Lockbox Decryption".cyan().bold());
             println!();
 
@@ -114,18 +118,14 @@ fn run() -> Result<()> {
                 print!("Decrypting {} ... ", file_path.display());
                 io::stdout().flush()?;
 
-                match decrypt_file_to_path(
-                    file_path,
-                    password.as_bytes(),
-                    output.as_deref(),
-                    force,
-                ) {
+                match decrypt_file_to_path(file_path, password.as_bytes(), output.as_deref(), force)
+                {
                     Ok(output_path) => {
                         println!("{} → {}", "✓".green(), output_path.display());
                         success_count += 1;
                     }
                     Err(LockboxError::Cancelled) => {
-                        println!("{}", "skipped".yellow());    
+                        println!("{}", "skipped".yellow());
                     }
                     Err(LockboxError::DecryptionFailed) => {
                         println!("{} incorrect password or corrupted file", "✗".red());
@@ -153,7 +153,6 @@ fn run() -> Result<()> {
                     error_count
                 );
             }
-
         }
     }
 

@@ -24,13 +24,10 @@ pub fn prompt_confirmation(message: &str) -> Result<bool> {
 pub fn check_overwrite(path: &Path, force: bool) -> Result<()> {
     if path.exists() {
         if force {
-            return Ok(())
+            return Ok(());
         }
 
-        let prompt = format!(
-            "File '{}' already exists. Overwrite?",
-            path.display()
-        );
+        let prompt = format!("File '{}' already exists. Overwrite?", path.display());
 
         if prompt_confirmation(&prompt)? {
             Ok(())
@@ -61,18 +58,24 @@ pub fn encrypt_file(source_path: &Path, password: &[u8], force: bool) -> Result<
     let original_filename = source_path
         .file_name()
         .and_then(|n| n.to_str())
-        .ok_or_else(|| LockboxError::IoError(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "Invalid filename",
-        )))?;
+        .ok_or_else(|| {
+            LockboxError::IoError(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Invalid filename",
+            ))
+        })?;
 
     // Get the file stem (name without extension)
-    let file_stem = source_path.file_stem().and_then(|s| s.to_str())
-    .ok_or_else(|| LockboxError::IoError(
-        io::Error::new(io::ErrorKind::InvalidInput,
-            "Invalid filename",
-        )))?
-    .to_string();
+    let file_stem = source_path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .ok_or_else(|| {
+            LockboxError::IoError(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Invalid filename",
+            ))
+        })?
+        .to_string();
 
     // Create the output path: same directory, stem + lb
     // e.g., "secret.txt" -> "secret.lb", "document.pdf" -> "document.lb"
@@ -101,7 +104,12 @@ pub fn encrypt_file(source_path: &Path, password: &[u8], force: bool) -> Result<
 /// - Reads the encrypted file
 /// - Decrypts it with the provided password
 /// - Writes to the output directory with the original filename
-pub fn decrypt_file_to_path(source_path: &Path, password: &[u8], output_dir: Option<&Path>, force: bool) -> Result<PathBuf> {
+pub fn decrypt_file_to_path(
+    source_path: &Path,
+    password: &[u8],
+    output_dir: Option<&Path>,
+    force: bool,
+) -> Result<PathBuf> {
     // Verify source exists
     if !source_path.exists() {
         return Err(LockboxError::FileNotFound(
@@ -110,7 +118,10 @@ pub fn decrypt_file_to_path(source_path: &Path, password: &[u8], output_dir: Opt
     }
 
     // Verify it has .lb extension
-    let extension = source_path.extension().and_then(|e| e.to_str()).unwrap_or("");
+    let extension = source_path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("");
 
     if extension != LOCKBOX_EXTENSION {
         return Err(LockboxError::InvalidExtension);
