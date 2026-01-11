@@ -11,18 +11,19 @@ env:
 
 jobs:
   test:
-    name: Test
+    name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
-      os: [ubuntu-latest, macos-latest, windows-latest]
-      rust: [stable]
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
     steps:
       - uses: actions/checkout@v4
       
       - name: Install Rust
-        uses: dtolnay/rust-actions@stable
-        with:
-          toolchain: ${{ matrix.rust }}
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
@@ -37,9 +38,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Rust
-        uses: dtolnay/rust-actions@stable
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
           components: clippy, rustfmt
 
       - name: Check formatting
