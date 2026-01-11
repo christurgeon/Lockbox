@@ -17,8 +17,8 @@ fn prompt_password(prompt: &str) -> Result<Zeroizing<String>> {
     print!("{}", prompt);
     io::stdout().flush()?;
 
-    let password = rpassword::read_password()
-        .map_err(|e| LockboxError::IoError(io::Error::new(io::ErrorKind::Other, e)))?;
+    let password =
+        rpassword::read_password().map_err(|e| LockboxError::IoError(io::Error::other(e)))?;
 
     Ok(Zeroizing::new(password))
 }

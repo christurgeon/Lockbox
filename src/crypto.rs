@@ -121,19 +121,19 @@ pub fn decrypt(
         .map_err(|_| LockboxError::DecryptionFailed)
 }
 
-/// Encrypted file structure:
-///
-/// | Offset | Size | Description                          |
-/// |--------|------|--------------------------------------|
-/// | 0      | 0    | Magic bytes "LOCKBOX\x01"            |
-/// | 8      | 1    | Format version (currently 1)         |
-/// | 9      | 2    | Original filename length (u16 BE)    |
-/// | 11     | N    | Original filename (UTF-8)            |
-/// | 11+N   | 16   | Argon2id salt                        |
-/// | 27+N   | 12   | ChaCha20 nonce                       |
-/// | 39+N   | ...  | Encrypted data + auth tag (16 bytes) |
-///
-/// Total header size before encrypted data: 39 + filename_length bytes
+// Encrypted file structure:
+//
+// | Offset | Size | Description                          |
+// |--------|------|--------------------------------------|
+// | 0      | 0    | Magic bytes "LOCKBOX\x01"            |
+// | 8      | 1    | Format version (currently 1)         |
+// | 9      | 2    | Original filename length (u16 BE)    |
+// | 11     | N    | Original filename (UTF-8)            |
+// | 11+N   | 16   | Argon2id salt                        |
+// | 27+N   | 12   | ChaCha20 nonce                       |
+// | 39+N   | ...  | Encrypted data + auth tag (16 bytes) |
+//
+// Total header size before encrypted data: 39 + filename_length bytes
 
 /// Creates the encrypted file format with all metadata
 pub fn create_encrypted_file(

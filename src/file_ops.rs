@@ -91,7 +91,7 @@ pub fn encrypt_file(source_path: &Path, password: &[u8], force: bool) -> Result<
     let plaintext = fs::read(source_path)?;
 
     // Encrypt
-    let encrypted = create_encrypted_file(password, &original_filename, &plaintext)?;
+    let encrypted = create_encrypted_file(password, original_filename, &plaintext)?;
 
     // Write encrypted file
     fs::write(&output_path, encrypted)?;
