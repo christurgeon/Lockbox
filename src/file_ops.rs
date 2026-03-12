@@ -464,7 +464,10 @@ mod tests {
         let decrypted_path =
             decrypt_file_to_path(&encrypted_path, b"pass", Some(&output_dir), true).unwrap();
 
-        assert_eq!(fs::read(&decrypted_path).unwrap(), b"symlink target content");
+        assert_eq!(
+            fs::read(&decrypted_path).unwrap(),
+            b"symlink target content"
+        );
         // The recovered filename should be the symlink name, not the target
         assert_eq!(decrypted_path.file_name().unwrap(), "link.txt");
     }
@@ -758,13 +761,8 @@ mod tests {
 
             assert!(result.is_ok(), "Should be able to encrypt a read-only file");
             let output_dir = temp_dir.path().join("out");
-            let decrypted = decrypt_file_to_path(
-                &result.unwrap(),
-                b"pass",
-                Some(&output_dir),
-                true,
-            )
-            .unwrap();
+            let decrypted =
+                decrypt_file_to_path(&result.unwrap(), b"pass", Some(&output_dir), true).unwrap();
             assert_eq!(fs::read(&decrypted).unwrap(), b"read only data");
         }
     }

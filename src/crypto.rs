@@ -669,8 +669,7 @@ mod tests {
         let filename = "a".repeat(u16::MAX as usize);
 
         let encrypted = create_encrypted_file(password, &filename, plaintext).unwrap();
-        let (recovered_filename, recovered_plaintext) =
-            decrypt_file(password, &encrypted).unwrap();
+        let (recovered_filename, recovered_plaintext) = decrypt_file(password, &encrypted).unwrap();
 
         assert_eq!(recovered_filename, filename);
         assert_eq!(recovered_plaintext, plaintext);
@@ -747,8 +746,7 @@ mod tests {
         let filename = "../../etc/passwd";
 
         let encrypted = create_encrypted_file(password, filename, plaintext).unwrap();
-        let (recovered_filename, recovered_plaintext) =
-            decrypt_file(password, &encrypted).unwrap();
+        let (recovered_filename, recovered_plaintext) = decrypt_file(password, &encrypted).unwrap();
 
         assert_eq!(recovered_filename, filename);
         assert_eq!(recovered_plaintext, plaintext);
@@ -776,21 +774,18 @@ mod tests {
         let filename = "secret.txt";
 
         // First encryption
-        let encrypted_once =
-            create_encrypted_file(password1, filename, plaintext).unwrap();
+        let encrypted_once = create_encrypted_file(password1, filename, plaintext).unwrap();
 
         // Second encryption (encrypting the already-encrypted blob)
         let encrypted_twice =
             create_encrypted_file(password2, "secret.lb", &encrypted_once).unwrap();
 
         // Decrypt outer layer
-        let (outer_filename, inner_blob) =
-            decrypt_file(password2, &encrypted_twice).unwrap();
+        let (outer_filename, inner_blob) = decrypt_file(password2, &encrypted_twice).unwrap();
         assert_eq!(outer_filename, "secret.lb");
 
         // Decrypt inner layer
-        let (inner_filename, recovered_plaintext) =
-            decrypt_file(password1, &inner_blob).unwrap();
+        let (inner_filename, recovered_plaintext) = decrypt_file(password1, &inner_blob).unwrap();
         assert_eq!(inner_filename, filename);
         assert_eq!(recovered_plaintext, plaintext);
     }
