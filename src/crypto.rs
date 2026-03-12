@@ -658,4 +658,174 @@ mod tests {
 
         assert_eq!(recovered, plaintext);
     }
+
+    // ==================== Filename Boundary Tests ====================
+
+    #[test]
+    fn test_filename_at_u16_max_boundary() {
+        let password = b"password";
+        let plaintext = b"data";
+        // Exactly 65535 bytes — the maximum the u16 length field can represent
+        let filename = "a".repeat(u16::MAX as usize);
+
+        let encrypted = create_encrypted_file(password, &filename, plaintext).unwrap();
+        let (recovered_filename, recovered_plaintext) =
+            decrypt_file(password, &encrypted).unwrap();
+
+        assert_eq!(recovered_filename, filename);
+        assert_eq!(recovered_plaintext, plaintext);
+    }
+
+    #[test]
+    fn test_filename_exceeds_u16_max_fails() {
+        let password = b"password";
+        let plaintext = b"data";
+        // 65536 bytes — one more than the u16 max
+        let filename = "a".repeat(u16::MAX as usize + 1);
+
+        let result = create_encrypted_file(password, &filename, plaintext);
+        assert!(
+            matches!(result, Err(LockboxError::EncryptionFailed(_))),
+            "Filename exceeding u16::MAX bytes should fail"
+        );
+    }
+
+    #[test]
+    fn test_filename_length_field_lies_too_large() {
+        // Craft a file where the filename length field claims more bytes than exist
+        let password = b"password";
+        let plaintext = b"data";
+        let filename = "test.txt";
+
+        let mut encrypted = create_encrypted_file(password, filename, plaintext).unwrap();
+
+        // Overwrite filename length with a huge value (e.g., 60000)
+        let fake_len: u16 = 60000;
+        encrypted[9] = fake_len.to_be_bytes()[0];
+        encrypted[10] = fake_len.to_be_bytes()[1];
+
+        let result = decrypt_file(password, &encrypted);
+        assert!(
+            result.is_err(),
+            "Lying filename length field should cause a parse error"
+        );
+    }
+
+    #[test]
+    fn test_non_utf8_filename_in_encrypted_data() {
+        // Manually construct encrypted data with invalid UTF-8 in the filename field
+        let password = b"password";
+        let salt = [0u8; SALT_LENGTH];
+        let nonce = [0u8; NONCE_LENGTH];
+        let key = derive_key_from_password(password, &salt).unwrap();
+        let ciphertext = encrypt(&key, &nonce, b"data").unwrap();
+
+        let invalid_utf8_filename: &[u8] = &[0xFF, 0xFE, 0x80, 0x81];
+
+        let mut data = Vec::new();
+        data.extend_from_slice(MAGIC_BYTES);
+        data.push(FORMAT_VERSION);
+        data.extend_from_slice(&(invalid_utf8_filename.len() as u16).to_be_bytes());
+        data.extend_from_slice(invalid_utf8_filename);
+        data.extend_from_slice(&salt);
+        data.extend_from_slice(&nonce);
+        data.extend_from_slice(&ciphertext);
+
+        let result = decrypt_file(password, &data);
+        assert!(
+            matches!(result, Err(LockboxError::InvalidFileFormat)),
+            "Non-UTF-8 filename should return InvalidFileFormat"
+        );
+    }
+
+    #[test]
+    fn test_filename_with_path_separators() {
+        // A filename containing slashes should round-trip at the crypto layer
+        // (path traversal sanitization is handled in file_ops, not here)
+        let password = b"password";
+        let plaintext = b"data";
+        let filename = "../../etc/passwd";
+
+        let encrypted = create_encrypted_file(password, filename, plaintext).unwrap();
+        let (recovered_filename, recovered_plaintext) =
+            decrypt_file(password, &encrypted).unwrap();
+
+        assert_eq!(recovered_filename, filename);
+        assert_eq!(recovered_plaintext, plaintext);
+    }
+
+    #[test]
+    fn test_empty_filename() {
+        let password = b"password";
+        let plaintext = b"data";
+        let filename = "";
+
+        let encrypted = create_encrypted_file(password, filename, plaintext).unwrap();
+        let (recovered_filename, _) = decrypt_file(password, &encrypted).unwrap();
+
+        assert_eq!(recovered_filename, "");
+    }
+
+    // ==================== Double Encryption Test ====================
+
+    #[test]
+    fn test_double_encryption_roundtrip() {
+        let password1 = b"first_password";
+        let password2 = b"second_password";
+        let plaintext = b"original content";
+        let filename = "secret.txt";
+
+        // First encryption
+        let encrypted_once =
+            create_encrypted_file(password1, filename, plaintext).unwrap();
+
+        // Second encryption (encrypting the already-encrypted blob)
+        let encrypted_twice =
+            create_encrypted_file(password2, "secret.lb", &encrypted_once).unwrap();
+
+        // Decrypt outer layer
+        let (outer_filename, inner_blob) =
+            decrypt_file(password2, &encrypted_twice).unwrap();
+        assert_eq!(outer_filename, "secret.lb");
+
+        // Decrypt inner layer
+        let (inner_filename, recovered_plaintext) =
+            decrypt_file(password1, &inner_blob).unwrap();
+        assert_eq!(inner_filename, filename);
+        assert_eq!(recovered_plaintext, plaintext);
+    }
+
+    // ==================== Truncation & Boundary Tests ====================
+
+    #[test]
+    fn test_file_exactly_minimum_size_but_invalid() {
+        // Construct data that is exactly the minimum size (55 bytes for empty filename)
+        // but has valid magic/version so it reaches the decrypt stage and fails auth
+        let min_size: usize = 8 + 1 + 2 + 16 + 12 + 16; // 55
+        let mut data = vec![0u8; min_size];
+        data[..8].copy_from_slice(MAGIC_BYTES);
+        data[8] = FORMAT_VERSION;
+        // filename_len = 0 (already zeroed)
+
+        let result = decrypt_file(b"password", &data);
+        // Should fail at decryption (wrong key) not at parsing
+        assert!(
+            matches!(result, Err(LockboxError::DecryptionFailed)),
+            "Minimum-size file with valid header should fail at decryption, not parsing"
+        );
+    }
+
+    #[test]
+    fn test_file_one_byte_below_minimum_size() {
+        let min_size: usize = 8 + 1 + 2 + 16 + 12 + 16;
+        let mut data = vec![0u8; min_size - 1];
+        data[..8].copy_from_slice(MAGIC_BYTES);
+        data[8] = FORMAT_VERSION;
+
+        let result = decrypt_file(b"password", &data);
+        assert!(
+            matches!(result, Err(LockboxError::InvalidFileFormat)),
+            "File below minimum size should be rejected as invalid format"
+        );
+    }
 }
