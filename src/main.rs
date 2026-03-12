@@ -64,6 +64,7 @@ fn run() -> Result<()> {
 
             let mut success_count = 0;
             let mut error_count = 0;
+            let mut skipped_count = 0;
 
             for file_path in &files {
                 print!("Encrypting {} ... ", file_path.display());
@@ -76,6 +77,7 @@ fn run() -> Result<()> {
                     }
                     Err(LockboxError::Cancelled) => {
                         println!("{}", "skipped".yellow());
+                        skipped_count += 1;
                     }
                     Err(e) => {
                         println!("{} {}", "✗".red(), e);
@@ -85,7 +87,7 @@ fn run() -> Result<()> {
             }
 
             println!();
-            if error_count == 0 {
+            if error_count == 0 && skipped_count == 0 {
                 println!(
                     "{} {} file(s) encrypted successfully",
                     "✓".green(),
@@ -93,10 +95,11 @@ fn run() -> Result<()> {
                 );
             } else {
                 println!(
-                    "{} {} succeeded, {} failed",
+                    "{} {} succeeded, {} failed, {} skipped",
                     "⚠".yellow(),
                     success_count,
-                    error_count
+                    error_count,
+                    skipped_count
                 );
             }
         }
@@ -113,6 +116,7 @@ fn run() -> Result<()> {
 
             let mut success_count = 0;
             let mut error_count = 0;
+            let mut skipped_count = 0;
 
             for file_path in &files {
                 print!("Decrypting {} ... ", file_path.display());
@@ -126,6 +130,7 @@ fn run() -> Result<()> {
                     }
                     Err(LockboxError::Cancelled) => {
                         println!("{}", "skipped".yellow());
+                        skipped_count += 1;
                     }
                     Err(LockboxError::DecryptionFailed) => {
                         println!("{} incorrect password or corrupted file", "✗".red());
@@ -139,7 +144,7 @@ fn run() -> Result<()> {
             }
 
             println!();
-            if error_count == 0 {
+            if error_count == 0 && skipped_count == 0 {
                 println!(
                     "{} {} file(s) decrypted successfully",
                     "✓".green(),
@@ -147,10 +152,11 @@ fn run() -> Result<()> {
                 );
             } else {
                 println!(
-                    "{} {} succeeded, {} failed",
+                    "{} {} succeeded, {} failed, {} skipped",
                     "⚠".yellow(),
                     success_count,
-                    error_count
+                    error_count,
+                    skipped_count
                 );
             }
         }

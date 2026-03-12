@@ -133,6 +133,19 @@ pub fn decrypt_file_to_path(
     // Decrypt
     let (original_filename, plaintext) = decrypt_file(password, &encrypted_data)?;
 
+    // Sanitize the recovered filename to prevent path traversal attacks.
+    // Extract only the final component and reject absolute paths.
+    let safe_filename = Path::new(&original_filename)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or_else(|| {
+            LockboxError::IoError(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Invalid or empty filename in encrypted file",
+            ))
+        })?
+        .to_string();
+
     // Determine output path
     let output_path = match output_dir {
         Some(dir) => {
@@ -140,11 +153,11 @@ pub fn decrypt_file_to_path(
             if !dir.exists() {
                 fs::create_dir_all(dir)?;
             }
-            dir.join(&original_filename)
+            dir.join(&safe_filename)
         }
         None => {
             // Use current directory
-            PathBuf::from(&original_filename)
+            PathBuf::from(&safe_filename)
         }
     };
 

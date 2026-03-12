@@ -125,7 +125,7 @@ pub fn decrypt(
 //
 // | Offset | Size | Description                          |
 // |--------|------|--------------------------------------|
-// | 0      | 0    | Magic bytes "LOCKBOX\x01"            |
+// | 0      | 8    | Magic bytes "LOCKBOX\x01"            |
 // | 8      | 1    | Format version (currently 1)         |
 // | 9      | 2    | Original filename length (u16 BE)    |
 // | 11     | N    | Original filename (UTF-8)            |
@@ -148,6 +148,11 @@ pub fn create_encrypted_file(
 
     // Build the file structure
     let filename_bytes = original_filename.as_bytes();
+    if filename_bytes.len() > u16::MAX as usize {
+        return Err(LockboxError::EncryptionFailed(
+            "Filename too long (exceeds 65535 bytes)".to_string(),
+        ));
+    }
     let filename_len = filename_bytes.len() as u16;
     let mut output = Vec::with_capacity(
         MAGIC_BYTES.len()

@@ -27,7 +27,6 @@ rand = "0.8"
 rpassword = "7.3"
 
 # Error handling
-anyhow = "1.0"
 thiserror = "1.0"
 
 # Secure memory handling - zeroes sensitive data when dropped
